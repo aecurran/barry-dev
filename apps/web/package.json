@@ -1,0 +1,35 @@
+{
+  "name": "@barry/web",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx lib/db/migrate.ts",
+    "db:seed": "tsx lib/db/seed.ts"
+  },
+  "dependencies": {
+    "next": "^15.3.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "drizzle-orm": "^0.44.0",
+    "postgres": "^3.4.5",
+    "@barry/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "typescript": "^5.8.0",
+    "drizzle-kit": "^0.31.0",
+    "tsx": "^4.19.0",
+    "eslint": "^9.25.0",
+    "eslint-config-next": "^15.3.0",
+    "@eslint/eslintrc": "^3.3.1",
+    "prettier": "^3.5.0"
+  }
+}
