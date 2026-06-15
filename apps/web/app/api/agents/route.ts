@@ -1,46 +1,77 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { agentInstances } from '@/lib/db/schema';
+import { families, agentInstances } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { isUuid, badRequest, notFound, serverError } from '@/lib/validate';
 
 // GET /api/agents?family_id={uuid}
 export async function GET(request: NextRequest) {
   const familyId = request.nextUrl.searchParams.get('family_id');
 
-  if (!familyId) {
-    return NextResponse.json({ error: 'family_id query parameter is required' }, { status: 400 });
+  if (!isUuid(familyId)) {
+    return badRequest('family_id query parameter is required and must be a valid UUID');
   }
 
-  const [agent] = await db
-    .select()
-    .from(agentInstances)
-    .where(eq(agentInstances.familyId, familyId));
+  try {
+    const [agent] = await db
+      .select()
+      .from(agentInstances)
+      .where(eq(agentInstances.familyId, familyId));
 
-  if (!agent) {
-    return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
+    if (!agent) {
+      return notFound('Agent not found');
+    }
+
+    return NextResponse.json({ agent });
+  } catch (err) {
+    return serverError('GET /api/agents', err);
   }
-
-  return NextResponse.json({ agent });
 }
 
 // POST /api/agents — register a new agent instance
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { family_id, container_id, port } = body;
-
-  if (!family_id) {
-    return NextResponse.json({ error: 'family_id is required' }, { status: 400 });
+  let body: { family_id?: string; container_id?: string; port?: number };
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest('Request body must be valid JSON');
   }
 
-  const [agent] = await db
-    .insert(agentInstances)
-    .values({
-      familyId: family_id,
-      containerId: container_id || null,
-      port: port || null,
-      status: container_id ? 'running' : 'pending',
-    })
-    .returning();
+  const { family_id, container_id, port } = body;
 
-  return NextResponse.json({ agent }, { status: 201 });
+  if (!isUuid(family_id)) {
+    return badRequest('family_id is required and must be a valid UUID');
+  }
+
+  try {
+    const [family] = await db
+      .select({ id: families.id })
+      .from(families)
+      .where(eq(families.id, family_id));
+
+    if (!family) {
+      return notFound('Family not found');
+    }
+
+    const [agent] = await db
+      .insert(agentInstances)
+      .values({
+        familyId: family_id,
+        containerId: container_id || null,
+        port: port || null,
+        status: container_id ? 'running' : 'pending',
+      })
+      .returning();
+
+    return NextResponse.json({ agent }, { status: 201 });
+  } catch (err) {
+    // Unique constraint: one agent per family (idempotency guard for provisioning)
+    if (typeof err === 'object' && err !== null && 'code' in err && err.code === '23505') {
+      return NextResponse.json(
+        { error: 'An agent instance already exists for this family' },
+        { status: 409 },
+      );
+    }
+    return serverError('POST /api/agents', err);
+  }
 }
