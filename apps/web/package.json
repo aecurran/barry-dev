@@ -9,8 +9,8 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx lib/db/migrate.ts",
-    "db:seed": "tsx lib/db/seed.ts"
+    "db:migrate": "dotenv -e ../../.env -- tsx lib/db/migrate.ts",
+    "db:seed": "dotenv -e ../../.env -- tsx lib/db/seed.ts"
   },
   "dependencies": {
     "next": "^15.3.0",
@@ -25,6 +25,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "typescript": "^5.8.0",
+    "dotenv-cli": "^8.0.0",
     "drizzle-kit": "^0.31.0",
     "tsx": "^4.19.0",
     "eslint": "^9.25.0",
