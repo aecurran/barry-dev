@@ -1,75 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { lists, listItems } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import { isUuid, badRequest, notFound, serverError } from '@/lib/validate';
+import { NextResponse } from 'next/server';
 
-// GET /api/lists/[listId]/items
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ listId: string }> },
-) {
-  const { listId } = await params;
+// List item management has moved to per-container SQLite databases.
+// In Phase 1, this route will proxy requests to the appropriate
+// family's agent container. For Phase 0, list items are managed
+// directly by the agent via its local SQLite database.
 
-  if (!isUuid(listId)) {
-    return badRequest('listId must be a valid UUID');
-  }
-
-  try {
-    const items = await db
-      .select()
-      .from(listItems)
-      .where(eq(listItems.listId, listId))
-      .orderBy(listItems.createdAt);
-
-    return NextResponse.json({ items });
-  } catch (err) {
-    return serverError('GET /api/lists/[listId]/items', err);
-  }
+export async function GET() {
+  return NextResponse.json(
+    { message: 'List item management is handled by each family\'s agent container. This endpoint will proxy to containers in Phase 1.' },
+    { status: 410 }
+  );
 }
 
-// POST /api/lists/[listId]/items
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ listId: string }> },
-) {
-  const { listId } = await params;
-
-  if (!isUuid(listId)) {
-    return badRequest('listId must be a valid UUID');
-  }
-
-  let body: { text?: string; added_by?: string };
-  try {
-    body = await request.json();
-  } catch {
-    return badRequest('Request body must be valid JSON');
-  }
-
-  const { text, added_by } = body;
-
-  if (!text) {
-    return badRequest('text is required');
-  }
-
-  try {
-    const [list] = await db.select({ id: lists.id }).from(lists).where(eq(lists.id, listId));
-
-    if (!list) {
-      return notFound('List not found');
-    }
-
-    const [item] = await db
-      .insert(listItems)
-      .values({
-        listId,
-        text,
-        addedBy: added_by || null,
-      })
-      .returning();
-
-    return NextResponse.json({ item }, { status: 201 });
-  } catch (err) {
-    return serverError('POST /api/lists/[listId]/items', err);
-  }
+export async function POST() {
+  return NextResponse.json(
+    { message: 'List item management is handled by each family\'s agent container. This endpoint will proxy to containers in Phase 1.' },
+    { status: 410 }
+  );
 }
